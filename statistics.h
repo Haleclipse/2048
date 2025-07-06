@@ -77,8 +77,8 @@ public:
 		ff.copyfmt(std::cout);
 		std::cout << std::fixed << std::setprecision(0);
 		std::cout << count << "\t";
-		std::cout << "avg = " << (sum / num) << ", ";
-		std::cout << "max = " << (max) << ", ";
+		std::cout << "平均分 = " << (sum / num) << ", ";
+		std::cout << "最高分 = " << (max) << ", ";
 		std::cout << "ops = " << (sop * 1000.0 / sdu);
 		std::cout <<     " (" << (pop * 1000.0 / pdu);
 		std::cout <<      "|" << (eop * 1000.0 / edu) << ")";

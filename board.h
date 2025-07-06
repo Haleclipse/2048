@@ -172,6 +172,59 @@ public:
 	}
 
 public:
+	/**
+	 * 检测是否有两个8192瓦片 (胜利条件)
+	 * 8192 = 2^13, 所以检测值为13
+	 */
+	bool has_two_8192() const {
+		int count_8192 = 0;
+		for (int i = 0; i < 16; i++) {
+			if (operator()(i) == 13) { // 2^13 = 8192
+				count_8192++;
+			}
+		}
+		return count_8192 >= 2;
+	}
+	
+	/**
+	 * 计算特定数值瓦片的数量
+	 */
+	int count_tile_value(int value) const {
+		int count = 0;
+		for (int i = 0; i < 16; i++) {
+			if (operator()(i) == value) {
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	/**
+	 * 获取最大瓦片值
+	 */
+	int max_tile_value() const {
+		int max_val = 0;
+		for (int i = 0; i < 16; i++) {
+			max_val = std::max(max_val, static_cast<int>(operator()(i)));
+		}
+		return max_val;
+	}
+	
+	/**
+	 * 计算危险程度 (接近胜利条件的程度)
+	 * 返回值: 0.0 = 安全, 1.0 = 极度危险
+	 */
+	float calculate_danger_level() const {
+		int count_8192 = count_tile_value(13); // 8192
+		int count_4096 = count_tile_value(12); // 4096
+		
+		if (count_8192 >= 1 && count_4096 >= 2) return 1.0f; // 极高危险
+		if (count_8192 >= 1 && count_4096 >= 1) return 0.7f; // 高危险
+		if (count_4096 >= 3) return 0.4f; // 中等危险
+		return 0.0f; // 安全
+	}
+
+public:
 	friend std::ostream& operator <<(std::ostream& out, const board& b) {
 		out << "+------------------------+" << std::endl;
 		for (auto& row : b.tile) {

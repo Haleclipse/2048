@@ -1,39 +1,30 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# 编译产物
+2048
+test_*
 *.o
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+# 权重文件
+*.w
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# 日志文件
+*.log
+training_logs/
 
-# Fortran module files
-*.mod
-*.smod
+# 系统文件
+.DS_Store
+Thumbs.db
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Executables
-*.exe
-*.out
-*.app
+# 临时文件
+*.tmp
+*.temp
 
-# Folders and settings
-/Release
-/.settings
-/.*project
-/Default/
-/Debug/
+# 调试文件
+*.dSYM/
+core
