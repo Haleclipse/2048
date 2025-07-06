@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include "board.h"
 #include "action.h"
 #include "episode.h"
@@ -100,6 +101,36 @@ public:
 	void summary() const {
 		show(true, data.size());
 	}
+	
+	/**
+	 * 显示训练进度
+	 */
+	void show_progress() const {
+		if (data.empty()) return;
+		
+		// 计算最近100局的统计
+		size_t recent_count = std::min(size_t(100), data.size());
+		board::score sum = 0, max = 0;
+		
+		for (auto it = data.end() - recent_count; it != data.end(); ++it) {
+			sum += it->score();
+			max = std::max(max, it->score());
+		}
+		
+		double avg = recent_count ? double(sum) / recent_count : 0.0;
+		double progress = double(count) / total * 100.0;
+		
+		// 输出进度信息
+		std::cout << "\r进度: " << count << "/" << total 
+		          << " (" << std::fixed << std::setprecision(1) << progress << "%) "
+		          << "| 最近100局: 平均=" << int(avg) << " 最高=" << max
+		          << " | TD学习中..." << std::flush;
+		
+		// 每1000局换行
+		if (count % 1000 == 0) {
+			std::cout << std::endl;
+		}
+	}
 
 	bool is_finished() const {
 		return count >= total;
@@ -113,6 +144,13 @@ public:
 
 	void close_episode(const std::string& flag = "") {
 		data.back().close_episode(flag);
+		
+		// 每100局显示简要进度
+		if (count % 100 == 0) {
+			show_progress();
+		}
+		
+		// 每block显示详细统计
 		if (count % block == 0) show();
 	}
 

@@ -293,6 +293,11 @@ public:
 			perform_final_td_update(flag);
 		}
 		
+		// 显示游戏摘要信息
+		if (game_count % 50 == 0) {
+			show_learning_summary(flag);
+		}
+		
 		last_game_record += "游戏结束，总共" + std::to_string(move_count) + "步\n";
 		last_game_record += "结果: " + flag + "\n";
 		
@@ -575,6 +580,22 @@ private:
 		// 衰减资格迹
 		decay_eligibility_traces();
 		
+		// 记录TD学习统计
+		static float total_td_error = 0.0f;
+		static int td_update_count = 0;
+		
+		total_td_error += std::abs(td_error);
+		td_update_count++;
+		
+		// 每100次更新输出一次学习统计
+		if (td_update_count % 100 == 0) {
+			float avg_td_error = total_td_error / 100;
+			std::cout << " [TD: 误差=" << std::fixed << std::setprecision(2) << avg_td_error 
+			          << " 学习率=" << alpha << "]" << std::flush;
+			total_td_error = 0.0f;
+			td_update_count = 0;
+		}
+		
 		// 如果启用详细日志，记录TD更新信息
 		if (game_count % 100 == 0 && move_count % 50 == 0) {
 			last_game_record += "【TD更新】TD误差=" + std::to_string(td_error) + 
@@ -752,4 +773,47 @@ public:
 	size_t get_episode_length() const { return current_episode.size(); }
 	float get_current_learning_rate() const { return alpha; }
 	bool is_learning_enabled() const { return enable_learning; }
+	
+private:
+	// 显示学习摘要
+	void show_learning_summary(const std::string& flag) {
+		if (!enable_learning) return;
+		
+		static int win_count = 0;
+		static int lose_count = 0;
+		static int total_steps = 0;
+		static float total_danger = 0.0f;
+		
+		// 统计游戏结果
+		if (flag == "win") win_count++;
+		else lose_count++;
+		
+		total_steps += move_count;
+		
+		// 计算平均危险度
+		if (!current_episode.empty()) {
+			float avg_danger = 0.0f;
+			for (const auto& step : current_episode) {
+				avg_danger += step.state.calculate_danger_level();
+			}
+			total_danger += avg_danger / current_episode.size();
+		}
+		
+		// 每50局输出摘要
+		if (game_count % 50 == 0) {
+			float avg_steps = float(total_steps) / 50;
+			float avg_danger = total_danger / 50;
+			float win_rate = float(win_count) / (win_count + lose_count) * 100;
+			
+			std::cout << "\n[学习摘要] 游戏" << (game_count-49) << "-" << game_count 
+			          << ": 平均步数=" << int(avg_steps) 
+			          << " 胜利避免率=" << std::fixed << std::setprecision(1) << (100-win_rate) << "%" 
+			          << " 平均危险度=" << std::setprecision(3) << avg_danger 
+			          << " 学习率=" << alpha << std::endl;
+			
+			// 重置统计
+			win_count = lose_count = total_steps = 0;
+			total_danger = 0.0f;
+		}
+	}
 };
