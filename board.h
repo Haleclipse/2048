@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 /**
  * array-based board for 2048
@@ -189,7 +190,7 @@ public:
 	/**
 	 * 计算特定数值瓦片的数量
 	 */
-	int count_tile_value(int value) const {
+	int count_tile_value(cell value) const {
 		int count = 0;
 		for (int i = 0; i < 16; i++) {
 			if (operator()(i) == value) {
