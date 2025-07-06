@@ -536,13 +536,15 @@ private:
 	 * TD学习相关方法
 	 */
 	
-	// 初始化资格迹
+	// 初始化资格迹（限制内存使用）
 	void initialize_eligibility_traces() {
 		if (net.empty()) return;
 		
 		eligibility_traces.resize(net.size());
 		for (size_t i = 0; i < net.size(); i++) {
-			eligibility_traces[i].resize(net[i].size(), 0.0f);
+			// 限制资格迹大小以避免内存溢出
+			size_t max_trace_size = std::min(net[i].size(), size_t(1000000)); // 最大100万项
+			eligibility_traces[i].resize(max_trace_size, 0.0f);
 		}
 	}
 	
@@ -679,13 +681,17 @@ private:
 			if (index >= net[net_index].size()) break;
 		}
 		
-		// 更新权重和资格迹
-		if (index < net[net_index].size() && index < eligibility_traces[net_index].size()) {
-			// 设置当前状态的资格迹为1
-			eligibility_traces[net_index][index] = 1.0f;
+		// 更新权重和资格迹（安全检查）
+		if (index < net[net_index].size()) {
+			// 如果索引在资格迹范围内，设置资格迹
+			float trace_value = 1.0f;
+			if (index < eligibility_traces[net_index].size()) {
+				eligibility_traces[net_index][index] = 1.0f;
+				trace_value = eligibility_traces[net_index][index];
+			}
 			
 			// TD(λ)权重更新
-			net[net_index][index] += alpha * td_error * eligibility_traces[net_index][index];
+			net[net_index][index] += alpha * td_error * trace_value;
 		}
 	}
 	

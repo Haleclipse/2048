@@ -29,40 +29,64 @@ echo
 # 阶段1: 基础策略学习 (1万局)
 echo "=== 阶段1: 基础策略学习 ==="
 echo "目标: 学习基本2048策略，稳定达到2048-4096"
-echo "参数: alpha=0.1, 无危险惩罚, 标准奖励"
+echo "参数: alpha=0.1, 标准奖励参数"
 
 ./2048 --total=10000 --block=1000 --limit=1000 \
-       --slide="init=65536,65536,65536,65536 alpha=0.1 lambda=0.9 learning=1 penalty=0.0 bonus=100" \
-       --save="$LOG_DIR/stage1.w" \
+       --slide="init=65536,65536,65536,65536 alpha=0.1 lambda=0.9 learning=1 penalty=0.7 bonus=1000 save=$LOG_DIR/stage1.w" \
+       --save="$LOG_DIR/stage1_stats.log" \
        2>&1 | tee "$LOG_DIR/stage1_training.log"
 
 echo "阶段1完成，权重已保存到 stage1.w"
+
+# 验证权重文件
+if [ -f "$LOG_DIR/stage1.w" ] && [ "$(file "$LOG_DIR/stage1.w" | grep -c 'data')" -gt 0 ]; then
+    echo "✓ 权重文件验证通过 ($(ls -lh "$LOG_DIR/stage1.w" | awk '{print $5}'))"
+else
+    echo "✗ 权重文件验证失败，请检查"
+    exit 1
+fi
 echo
 
-# 阶段2: 危险感知训练 (1万局) 
+# 阶段2: 危险感知训练 (8千局) 
 echo "=== 阶段2: 危险感知训练 ==="
 echo "目标: 学习识别危险状态，开始避免行为"
 echo "参数: alpha=0.05, 中等危险惩罚"
 
-./2048 --total=10000 --block=1000 --limit=1000 \
-       --slide="load=$LOG_DIR/stage1.w alpha=0.05 lambda=0.9 learning=1 penalty=0.5 bonus=500" \
-       --save="$LOG_DIR/stage2.w" \
+./2048 --total=8000 --block=1000 --limit=1000 \
+       --slide="load=$LOG_DIR/stage1.w alpha=0.05 lambda=0.9 learning=1 penalty=0.5 bonus=500 save=$LOG_DIR/stage2.w" \
+       --save="$LOG_DIR/stage2_stats.log" \
        2>&1 | tee "$LOG_DIR/stage2_training.log"
 
 echo "阶段2完成，权重已保存到 stage2.w"
+
+# 验证权重文件
+if [ -f "$LOG_DIR/stage2.w" ] && [ "$(file "$LOG_DIR/stage2.w" | grep -c 'data')" -gt 0 ]; then
+    echo "✓ 权重文件验证通过 ($(ls -lh "$LOG_DIR/stage2.w" | awk '{print $5}'))"
+else
+    echo "✗ 权重文件验证失败，请检查"
+    exit 1
+fi
 echo
 
-# 阶段3: 精细策略调整 (1万局)
+# 阶段3: 精细策略调整 (5千局)
 echo "=== 阶段3: 精细策略调整 ==="
 echo "目标: 精确控制，最大化存活时间和分数"
 echo "参数: alpha=0.01, 强化危险惩罚"
 
-./2048 --total=10000 --block=1000 --limit=1000 \
-       --slide="load=$LOG_DIR/stage2.w alpha=0.01 lambda=0.9 learning=1 penalty=0.8 bonus=1000" \
-       --save="$LOG_DIR/stage3.w" \
+./2048 --total=5000 --block=1000 --limit=1000 \
+       --slide="load=$LOG_DIR/stage2.w alpha=0.01 lambda=0.9 learning=1 penalty=0.8 bonus=300 save=$LOG_DIR/stage3.w" \
+       --save="$LOG_DIR/stage3_stats.log" \
        2>&1 | tee "$LOG_DIR/stage3_training.log"
 
 echo "阶段3完成，权重已保存到 stage3.w"
+
+# 验证权重文件
+if [ -f "$LOG_DIR/stage3.w" ] && [ "$(file "$LOG_DIR/stage3.w" | grep -c 'data')" -gt 0 ]; then
+    echo "✓ 权重文件验证通过 ($(ls -lh "$LOG_DIR/stage3.w" | awk '{print $5}'))"
+else
+    echo "✗ 权重文件验证失败，请检查"
+    exit 1
+fi
 echo
 
 # 测试阶段: 评估最终性能
@@ -71,6 +95,7 @@ echo "运行1000局测试，学习关闭"
 
 ./2048 --total=1000 --block=100 \
        --slide="load=$LOG_DIR/stage3.w alpha=0 learning=0" \
+       --save="$LOG_DIR/final_test_stats.log" \
        2>&1 | tee "$LOG_DIR/final_test.log"
 
 echo
@@ -91,22 +116,22 @@ cat > "$LOG_DIR/training_report.md" << EOF
 ### 阶段1: 基础策略学习
 - 训练局数: 10,000局
 - 学习率: 0.1
-- 危险惩罚: 0.0 (无)
-- 存活奖励: 100
+- 危险惩罚: 0.7 (标准)
+- 存活奖励: 1000
 - 目标: 学习基本2048策略
 
 ### 阶段2: 危险感知训练  
-- 训练局数: 10,000局
+- 训练局数: 8,000局
 - 学习率: 0.05
 - 危险惩罚: 0.5 (中等)
 - 存活奖励: 500
 - 目标: 学习识别危险状态
 
 ### 阶段3: 精细策略调整
-- 训练局数: 10,000局
+- 训练局数: 5,000局
 - 学习率: 0.01
 - 危险惩罚: 0.8 (强化)
-- 存活奖励: 1000
+- 存活奖励: 300
 - 目标: 精确控制和优化
 
 ### 最终测试
