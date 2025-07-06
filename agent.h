@@ -293,8 +293,8 @@ public:
 			perform_final_td_update(flag);
 		}
 		
-		// 显示游戏摘要信息
-		if (game_count % 50 == 0) {
+		// 显示游戏摘要信息（降低频率）
+		if (enable_learning && game_count % 200 == 0) {
 			show_learning_summary(flag);
 		}
 		
@@ -580,18 +580,19 @@ private:
 		// 衰减资格迹
 		decay_eligibility_traces();
 		
-		// 记录TD学习统计
+		// 记录TD学习统计（仅在必要时输出）
 		static float total_td_error = 0.0f;
 		static int td_update_count = 0;
 		
 		total_td_error += std::abs(td_error);
 		td_update_count++;
 		
-		// 每100次更新输出一次学习统计
-		if (td_update_count % 100 == 0) {
-			float avg_td_error = total_td_error / 100;
-			std::cout << " [TD: 误差=" << std::fixed << std::setprecision(2) << avg_td_error 
-			          << " 学习率=" << alpha << "]" << std::flush;
+		// 仅在特定条件下输出TD统计
+		if (enable_learning && alpha > 0 && td_update_count % 5000 == 0) {
+			float avg_td_error = total_td_error / 5000;
+			if (avg_td_error < 1000000) {  // 只显示合理范围的误差
+				std::cout << " [TD误差: " << std::fixed << std::setprecision(0) << avg_td_error << "]" << std::flush;
+			}
 			total_td_error = 0.0f;
 			td_update_count = 0;
 		}
@@ -799,17 +800,20 @@ private:
 			total_danger += avg_danger / current_episode.size();
 		}
 		
-		// 每50局输出摘要
-		if (game_count % 50 == 0) {
-			float avg_steps = float(total_steps) / 50;
-			float avg_danger = total_danger / 50;
+		// 每200局输出摘要
+		if (game_count % 200 == 0) {
+			float avg_steps = float(total_steps) / 200;
+			float avg_danger = total_danger / 200;
 			float win_rate = float(win_count) / (win_count + lose_count) * 100;
 			
-			std::cout << "\n[学习摘要] 游戏" << (game_count-49) << "-" << game_count 
+			std::cout << "\n[学习摘要] 游戏" << (game_count-199) << "-" << game_count 
 			          << ": 平均步数=" << int(avg_steps) 
 			          << " 胜利避免率=" << std::fixed << std::setprecision(1) << (100-win_rate) << "%" 
-			          << " 平均危险度=" << std::setprecision(3) << avg_danger 
-			          << " 学习率=" << alpha << std::endl;
+			          << " 平均危险度=" << std::setprecision(3) << avg_danger;
+			if (alpha > 0) {
+				std::cout << " 学习率=" << alpha;
+			}
+			std::cout << std::endl;
 			
 			// 重置统计
 			win_count = lose_count = total_steps = 0;

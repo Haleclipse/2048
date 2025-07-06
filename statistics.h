@@ -120,11 +120,10 @@ public:
 		double avg = recent_count ? double(sum) / recent_count : 0.0;
 		double progress = double(count) / total * 100.0;
 		
-		// 输出进度信息
-		std::cout << "\r进度: " << count << "/" << total 
+		// 输出简洁的进度信息
+		std::cout << "\r进度 " << count << "/" << total 
 		          << " (" << std::fixed << std::setprecision(1) << progress << "%) "
-		          << "| 最近100局: 平均=" << int(avg) << " 最高=" << max
-		          << " | TD学习中..." << std::flush;
+		          << "平均=" << int(avg) << " 最高=" << max << std::flush;
 		
 		// 每1000局换行
 		if (count % 1000 == 0) {
